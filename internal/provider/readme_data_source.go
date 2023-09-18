@@ -26,8 +26,7 @@ func NewReadmeDataSource() datasource.DataSource {
 
 // ReadmeDataSource defines the data source implementation.
 type ReadmeDataSource struct {
-	//client *http.Client
-	client *string
+	popts ProviderOpts
 }
 
 // ReadmeDataSourceModel describes the data source data model.
@@ -73,24 +72,19 @@ func (d *ReadmeDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
 	}
 }
 
+// copied from https://github.com/chainguard-dev/terraform-provider-apko/blob/55ea67c749a662a8c27f64c5f6d47576308a997d/internal/provider/config_data_source.go#L94-L106
 func (d *ReadmeDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	// Prevent panic if the provider has not been configured.
 	if req.ProviderData == nil {
 		return
 	}
 
-	client, ok := req.ProviderData.(*string)
-
-	if !ok {
-		resp.Diagnostics.AddError(
-			"Unexpected Data Source Configure Type",
-			fmt.Sprintf("Expected *http.Client, got: %T. Please report this issue to the provider developers.", req.ProviderData),
-		)
-
+	popts, ok := req.ProviderData.(*ProviderOpts)
+	if !ok || popts == nil {
+		resp.Diagnostics.AddError("Client Error", "invalid provider data")
 		return
 	}
-
-	d.client = client
+	d.popts = *popts
 }
 
 func (d *ReadmeDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
@@ -104,16 +98,17 @@ func (d *ReadmeDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 	}
 
 	var readme Readme
-	//fileName := fmt.Sprintf("%s/%s", invokerModule, "README.hcl")
-	err := hclsimple.DecodeFile("/Users/jamon/chainguard/images/images/zot/README.hcl", nil, &readme)
+
+	tflog.Trace(ctx, fmt.Sprintf("got repos: %v", d.popts.Name))
+
+	fileName := fmt.Sprintf("%s/%s", d.popts.Name, "README.hcl")
+	err := hclsimple.DecodeFile(fileName, nil, &readme)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Unabled to parse README.hcl",
-			fmt.Sprintf("%v. Please report this issue to the provider developers.", err),
+			"Unable to parse README.hcl",
+			fmt.Sprintf("%v. URL HERE", err),
 		)
 	}
-
-	tflog.Trace(ctx, fmt.Sprintf("%#v\n", readme))
 
 	// Write logs using the tflog package
 	// Documentation: https://terraform.io/plugin/log

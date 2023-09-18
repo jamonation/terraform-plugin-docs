@@ -37,6 +37,10 @@ type docsProviderModel struct {
 	Name types.String `tfsdk:"name"`
 }
 
+type ProviderOpts struct {
+	Name string `tfsdk:"name"`
+}
+
 // Metadata returns the provider type name.
 func (p *docsProvider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
 	resp.TypeName = "docs"
@@ -66,7 +70,12 @@ func (p *docsProvider) Configure(ctx context.Context, req provider.ConfigureRequ
 		return
 	}
 
-	invokerModule = config.Name.ValueString()
+	opts := &ProviderOpts{
+		Name: config.Name.ValueString(),
+	}
+
+	//invokerModule = config.Name.ValueString()
+	resp.DataSourceData = opts
 }
 
 // Resources defines the resources implemented in the provider.
