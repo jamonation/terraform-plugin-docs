@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/hashicorp/hcl/v2/hclsimple"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -16,7 +17,7 @@ import (
 )
 
 const readmeTemplate = `name        = "%s"
-image       = ""
+image       = "%s"
 intro       = ""
 body        = ""
 description = ""
@@ -44,6 +45,8 @@ type ReadmeDataSourceModel struct {
 	Image       types.String `tfsdk:"image" hcl:"image" cty:"image"`
 	Intro       types.String `tfsdk:"intro" hcl:"intro" cty:"intro"`
 	Name        string       `tfsdk:"name"`
+	ImagePath   types.String `tfsdk:"image_path"`
+	FileName    types.String `tfsdk:"file_name"`
 }
 
 // Readme describes the data source data model.
@@ -53,6 +56,16 @@ type Readme struct {
 	Image       string `tfsdk:"image" hcl:"image"`
 	Intro       string `tfsdk:"intro" hcl:"intro"`
 	Name        string `tfsdk:"name" hcl:"name"`
+}
+
+type completeReadme struct {
+	Body        string `tfsdk:"body" hcl:"body"`
+	Description string `tfsdk:"description" hcl:"description"`
+	Image       string `tfsdk:"image" hcl:"image"`
+	Intro       string `tfsdk:"intro" hcl:"intro"`
+	Name        string `tfsdk:"name" hcl:"name"`
+	ImagePath   string `tfsdk:"image_path"`
+	FileName    string `tfsdk:"file_name"`
 }
 
 func (d *ReadmeDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -79,6 +92,14 @@ func (d *ReadmeDataSource) Schema(ctx context.Context, req datasource.SchemaRequ
 				Optional: true,
 			},
 			"name": schema.StringAttribute{
+				Computed: true,
+				Optional: true,
+			},
+			"file_name": schema.StringAttribute{
+				Computed: true,
+				Optional: true,
+			},
+			"image_path": schema.StringAttribute{
 				Computed: true,
 				Optional: true,
 			},
@@ -112,34 +133,60 @@ func (d *ReadmeDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 	}
 
 	var readme Readme
+	imagePath, fileName := getFileName(data)
 
-	tflog.Trace(ctx, fmt.Sprintf("got repos: %v", data.Name))
-
-	fileName := fmt.Sprintf("images/%s/%s", data.Name, "README.hcl")
-	_, err := os.Stat(fileName)
+	fullPath := fmt.Sprintf("%s/%s", imagePath, fileName)
+	_, err := os.Stat(fullPath)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"README.hcl error",
-			fmt.Sprintf("Missing or inaccessible file %v.\nCopy /tmp/README.hcl for an example template.", fileName),
+			fmt.Sprintf("%s missing or inaccessible.\nRun `cp /tmp/%s %s` and edit it.", fullPath, fileName, fullPath),
 		)
-		sampleReadme := fmt.Sprintf(readmeTemplate, data.Name)
-		_ = os.WriteFile("/tmp/README.hcl", []byte(sampleReadme), os.FileMode(0o644))
+		name := strings.Replace(data.Name, ".", "-", -1)
+		image := fmt.Sprintf("cgr.dev/chainguard/%s", name)
+		sampleReadme := fmt.Sprintf(readmeTemplate, name, image)
+		_ = os.WriteFile("/tmp/"+fileName, []byte(sampleReadme), os.FileMode(0o644))
 		return
 	}
 
-	err = hclsimple.DecodeFile(fileName, nil, &readme)
+	err = hclsimple.DecodeFile(fullPath, nil, &readme)
 	if err != nil {
+		errSummary := fmt.Sprintf("Unable to parse %s", fullPath)
 		resp.Diagnostics.AddError(
-			"Unable to parse README.hcl",
-			fmt.Sprintf("%v. URL HERE", err),
+			errSummary,
+			fmt.Sprintf("%v", err),
 		)
 	}
-	readme.Name = data.Name
+
+	fullReadme := &completeReadme{
+		Body:        readme.Body,
+		Description: readme.Description,
+		Image:       readme.Image,
+		Intro:       readme.Intro,
+		Name:        readme.Name,
+		ImagePath:   imagePath,
+		FileName:    strings.Replace(fileName, ".hcl", ".md", -1),
+	}
 
 	// Write logs using the tflog package
 	// Documentation: https://terraform.io/plugin/log
 	tflog.Trace(ctx, "read a data source")
 
 	// Save data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &readme)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &fullReadme)...)
+}
+
+// checks for variants like cert-manager.acmesolver, ensure they get their own template
+func getFileName(data ReadmeDataSourceModel) (string, string) {
+	var imagePath, fileName string
+
+	splitName := strings.Split(data.Name, ".")
+	imagePath = fmt.Sprintf("images/%s", splitName[0])
+	if len(splitName) > 1 {
+		variant := splitName[len(splitName)-1]
+		fileName = fmt.Sprintf("README.%s.hcl", variant)
+	} else {
+		fileName = fmt.Sprintf("README.hcl")
+	}
+	return imagePath, fileName
 }

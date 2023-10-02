@@ -31,13 +31,9 @@ type docsProvider struct {
 	version string
 }
 
-type docsProviderModel struct {
-	//Name types.String `tfsdk:"name"`
-}
+type docsProviderModel struct{}
 
-type ProviderOpts struct {
-	//Name string `tfsdk:"name"`
-}
+type ProviderOpts struct{}
 
 // Metadata returns the provider type name.
 func (p *docsProvider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
@@ -47,15 +43,6 @@ func (p *docsProvider) Metadata(_ context.Context, _ provider.MetadataRequest, r
 
 // Schema defines the provider-level schema for configuration data.
 func (p *docsProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp *provider.SchemaResponse) {
-	// resp.Schema = schema.Schema{
-	// 	Attributes: map[string]schema.Attribute{
-	// 		"name": schema.StringAttribute{
-	// 			Required:    true,
-	// 			Optional:    false,
-	// 			Description: "Name of the module invoking the provider",
-	// 		},
-	// 	},
-	// }
 }
 
 // Configure prepares a HashiCups API client for data sources and resources.
@@ -68,11 +55,8 @@ func (p *docsProvider) Configure(ctx context.Context, req provider.ConfigureRequ
 		return
 	}
 
-	opts := &ProviderOpts{
-		//Name: config.Name.ValueString(),
-	}
+	opts := &ProviderOpts{}
 
-	//invokerModule = config.Name.ValueString()
 	resp.DataSourceData = opts
 }
 
