@@ -5,9 +5,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
-	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
-	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -34,11 +32,11 @@ type docsProvider struct {
 }
 
 type docsProviderModel struct {
-	Name types.String `tfsdk:"name"`
+	//Name types.String `tfsdk:"name"`
 }
 
 type ProviderOpts struct {
-	Name string `tfsdk:"name"`
+	//Name string `tfsdk:"name"`
 }
 
 // Metadata returns the provider type name.
@@ -49,15 +47,15 @@ func (p *docsProvider) Metadata(_ context.Context, _ provider.MetadataRequest, r
 
 // Schema defines the provider-level schema for configuration data.
 func (p *docsProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp *provider.SchemaResponse) {
-	resp.Schema = schema.Schema{
-		Attributes: map[string]schema.Attribute{
-			"name": schema.StringAttribute{
-				Required:    true,
-				Optional:    false,
-				Description: "Name of the module invoking the provider",
-			},
-		},
-	}
+	// resp.Schema = schema.Schema{
+	// 	Attributes: map[string]schema.Attribute{
+	// 		"name": schema.StringAttribute{
+	// 			Required:    true,
+	// 			Optional:    false,
+	// 			Description: "Name of the module invoking the provider",
+	// 		},
+	// 	},
+	// }
 }
 
 // Configure prepares a HashiCups API client for data sources and resources.
@@ -71,7 +69,7 @@ func (p *docsProvider) Configure(ctx context.Context, req provider.ConfigureRequ
 	}
 
 	opts := &ProviderOpts{
-		Name: config.Name.ValueString(),
+		//Name: config.Name.ValueString(),
 	}
 
 	//invokerModule = config.Name.ValueString()
