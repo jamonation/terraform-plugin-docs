@@ -16,17 +16,16 @@ import (
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
-const readmeTemplate = `name        = "%s"
-image       = "%s"
-intro       = ""
-body        = ""
-description = ""
+const readmeTemplate = `name     = "%s"
+image    = "%s"
+overview = ""
+body     = ""
 `
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var (
-	//_ datasource.DataSource              = &ReadmeDataSource{}
-	_ datasource.DataSourceWithConfigure = &ReadmeDataSource{}
+	_ datasource.DataSource = &ReadmeDataSource{}
+	// _ datasource.DataSourceWithConfigure = &ReadmeDataSource{}
 )
 
 func NewReadmeDataSource() datasource.DataSource {
@@ -38,34 +37,35 @@ type ReadmeDataSource struct {
 	popts ProviderOpts
 }
 
+// these three structs are ridiculous and need refactoring, but they work for now
+
 // ReadmeDataSourceModel describes the data source data model.
 type ReadmeDataSourceModel struct {
-	Body        types.String `tfsdk:"body" hcl:"body" cty:"body"`
-	Description types.String `tfsdk:"description" hcl:"description" cty:"description"`
-	Image       types.String `tfsdk:"image" hcl:"image" cty:"image"`
-	Intro       types.String `tfsdk:"intro" hcl:"intro" cty:"intro"`
-	Name        string       `tfsdk:"name"`
-	ImagePath   types.String `tfsdk:"image_path"`
-	FileName    types.String `tfsdk:"file_name"`
+	Body      types.String `tfsdk:"body" hcl:"body" cty:"body"`
+	Overview  types.String `tfsdk:"overview" hcl:"overview" cty:"overview"`
+	Image     types.String `tfsdk:"image" hcl:"image" cty:"image"`
+	Name      string       `tfsdk:"name"`
+	ImagePath types.String `tfsdk:"image_path"`
+	FileName  types.String `tfsdk:"file_name"`
 }
 
 // Readme describes the data source data model.
 type Readme struct {
-	Body        string `tfsdk:"body" hcl:"body"`
-	Description string `tfsdk:"description" hcl:"description"`
-	Image       string `tfsdk:"image" hcl:"image"`
-	Intro       string `tfsdk:"intro" hcl:"intro"`
-	Name        string `tfsdk:"name" hcl:"name"`
+	Body      string `tfsdk:"body" hcl:"body"`
+	Overview  string `tfsdk:"overview" hcl:"overview"`
+	Image     string `tfsdk:"image" hcl:"image"`
+	Name      string `tfsdk:"name" hcl:"name"`
+	ImagePath string `tfsdk:"image_path"`
+	FileName  string `tfsdk:"file_name"`
 }
 
 type completeReadme struct {
-	Body        string `tfsdk:"body" hcl:"body"`
-	Description string `tfsdk:"description" hcl:"description"`
-	Image       string `tfsdk:"image" hcl:"image"`
-	Intro       string `tfsdk:"intro" hcl:"intro"`
-	Name        string `tfsdk:"name" hcl:"name"`
-	ImagePath   string `tfsdk:"image_path"`
-	FileName    string `tfsdk:"file_name"`
+	Body      string `tfsdk:"body" hcl:"body"`
+	Overview  string `tfsdk:"overview" hcl:"overview"`
+	Image     string `tfsdk:"image" hcl:"image"`
+	Name      string `tfsdk:"name" hcl:"name"`
+	ImagePath string `tfsdk:"image_path"`
+	FileName  string `tfsdk:"file_name"`
 }
 
 func (d *ReadmeDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -75,15 +75,11 @@ func (d *ReadmeDataSource) Metadata(ctx context.Context, req datasource.Metadata
 func (d *ReadmeDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
-			"intro": schema.StringAttribute{
-				Computed: true,
-				Optional: true,
-			},
 			"body": schema.StringAttribute{
 				Computed: true,
 				Optional: true,
 			},
-			"description": schema.StringAttribute{
+			"overview": schema.StringAttribute{
 				Computed: true,
 				Optional: true,
 			},
@@ -159,13 +155,12 @@ func (d *ReadmeDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 	}
 
 	fullReadme := &completeReadme{
-		Body:        readme.Body,
-		Description: readme.Description,
-		Image:       readme.Image,
-		Intro:       readme.Intro,
-		Name:        readme.Name,
-		ImagePath:   imagePath,
-		FileName:    strings.Replace(fileName, ".hcl", ".md", -1),
+		Body:      readme.Body,
+		Overview:  readme.Overview,
+		Image:     readme.Image,
+		Name:      readme.Name,
+		ImagePath: imagePath,
+		FileName:  strings.Replace(fileName, ".hcl", ".md", -1),
 	}
 
 	// Write logs using the tflog package

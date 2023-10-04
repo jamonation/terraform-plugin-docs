@@ -8,10 +8,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 )
 
-// Ensure the implementation satisfies the expected interfaces.
 var (
-	_             provider.Provider = &docsProvider{}
-	invokerModule string
+	_ provider.Provider = &docsProvider{}
 )
 
 // New is a helper function to simplify provider server and testing implementation.
@@ -25,9 +23,6 @@ func New(version string) func() provider.Provider {
 
 // docsProvider is the provider implementation.
 type docsProvider struct {
-	// version is set to the provider version on release, "dev" when the
-	// provider is built and ran locally, and "test" when running acceptance
-	// testing.
 	version string
 }
 
